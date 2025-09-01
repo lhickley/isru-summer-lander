@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars Lander - ISRU Mission</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Mars Lander - ISRU Mission</h1>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="controls">
+            <p>Use ARROW KEYS to control thrusters</p>
+            <p>Land safely to deploy ISRU equipment!</p>
+        </div>
+        <div class="stats">
+            <div>Fuel: <span id="fuel">100</span>%</div>
+            <div>Altitude: <span id="altitude">1000</span>m</div>
+            <div>Velocity: <span id="velocity">0</span> m/s</div>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
