@@ -16,11 +16,25 @@ class MarsLander {
             isLanded: false
         };
         
+        // Input handling
+        this.keys = {};
+        this.setupInput();
+        
         // Mars surface and landing zones
         this.surface = this.generateSurface();
         this.landingZones = this.generateLandingZones();
         
         this.gameLoop();
+    }
+    
+    setupInput() {
+        document.addEventListener('keydown', (e) => {
+            this.keys[e.code] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+        });
     }
     
     generateSurface() {
@@ -62,10 +76,12 @@ class MarsLander {
     }
     
     update() {
+        if (this.lander.isLanded) return; // Don't update if already landed
+        
         // Mars gravity (lighter than original)
         this.lander.velocityY += 0.08;
         
-        // Handle input (will be expanded)
+        // Handle input
         this.handleInput();
         
         // Update position
@@ -75,16 +91,63 @@ class MarsLander {
         // Basic boundary check
         if (this.lander.x < 0) this.lander.x = 0;
         if (this.lander.x > 784) this.lander.x = 784;
+        
+        // Check for collision
+        this.checkCollision();
     }
     
     handleInput() {
-        // Placeholder for input handling
-        // Will be implemented in different ways on different branches
+        // Basic thrust controls
+        if (this.keys['ArrowUp'] && this.lander.fuel > 0) {
+            this.lander.velocityY -= this.lander.thrustPower;
+            this.lander.fuel -= 0.8;
+        }
+        
+        if (this.keys['ArrowLeft'] && this.lander.fuel > 0) {
+            this.lander.velocityX -= this.lander.thrustPower * 0.3;
+            this.lander.fuel -= 0.4;
+        }
+        
+        if (this.keys['ArrowRight'] && this.lander.fuel > 0) {
+            this.lander.velocityX += this.lander.thrustPower * 0.3;
+            this.lander.fuel -= 0.4;
+        }
     }
     
     checkCollision() {
-        // This is where the conflict will occur!
-        // Different implementations on main vs feature branch
+        // Simple collision detection with surface interpolation
+        for (let i = 0; i < this.surface.length - 1; i++) {
+            const point1 = this.surface[i];
+            const point2 = this.surface[i + 1];
+            
+            // Check if lander is in this surface segment
+            if (this.lander.x + this.lander.width > point1.x && 
+                this.lander.x < point2.x) {
+                
+                // Linear interpolation for surface height
+                const t = (this.lander.x + this.lander.width/2 - point1.x) / (point2.x - point1.x);
+                const surfaceY = point1.y + t * (point2.y - point1.y);
+                
+                if (this.lander.y + this.lander.height >= surfaceY) {
+                    // Check if in any landing zone
+                    const inLandingZone = this.landingZones.some(zone => 
+                        Math.abs(this.lander.x + this.lander.width/2 - zone.x) < zone.width/2
+                    );
+                    
+                    if (this.lander.velocityY < 2 && inLandingZone) {
+                        console.log("Successful landing! ISRU deployment ready.");
+                        this.lander.isLanded = true;
+                    } else if (this.lander.velocityY < 2) {
+                        console.log("Landed outside designated zone.");
+                        this.lander.isLanded = true;
+                    } else {
+                        console.log("Crash! Mission failed.");
+                        this.lander.isLanded = true;
+                    }
+                    break;
+                }
+            }
+        }
     }
     
     drawLandingZones() {
