@@ -16,7 +16,7 @@ class MarsLander {
             isLanded: false
         };
         
-        // Input handling
+        // Combined input handling from both branches
         this.keys = {};
         this.setupInput();
         
@@ -97,57 +97,75 @@ class MarsLander {
     }
     
     handleInput() {
-        // Basic thrust controls
+        // Combined thruster controls with optimized fuel consumption
         if (this.keys['ArrowUp'] && this.lander.fuel > 0) {
             this.lander.velocityY -= this.lander.thrustPower;
-            this.lander.fuel -= 0.8;
+            this.lander.fuel -= 0.6; // Use the more efficient rate from feature branch
         }
         
         if (this.keys['ArrowLeft'] && this.lander.fuel > 0) {
-            this.lander.velocityX -= this.lander.thrustPower * 0.3;
-            this.lander.fuel -= 0.4;
+            this.lander.velocityX -= this.lander.thrustPower * 0.4;
+            this.lander.fuel -= 0.3;
         }
         
         if (this.keys['ArrowRight'] && this.lander.fuel > 0) {
-            this.lander.velocityX += this.lander.thrustPower * 0.3;
-            this.lander.fuel -= 0.4;
+            this.lander.velocityX += this.lander.thrustPower * 0.4;
+            this.lander.fuel -= 0.3;
         }
+        
+        // Apply realistic flight dynamics from feature branch
+        this.lander.velocityX *= 0.98;
     }
     
     checkCollision() {
-        // Simple collision detection with surface interpolation
+        // Combined landing system with precise surface collision and zone validation
         for (let i = 0; i < this.surface.length - 1; i++) {
             const point1 = this.surface[i];
             const point2 = this.surface[i + 1];
             
-            // Check if lander is in this surface segment
             if (this.lander.x + this.lander.width > point1.x && 
                 this.lander.x < point2.x) {
                 
-                // Linear interpolation for surface height
+                // Precise surface height calculation from feature branch
                 const t = (this.lander.x + this.lander.width/2 - point1.x) / (point2.x - point1.x);
                 const surfaceY = point1.y + t * (point2.y - point1.y);
                 
                 if (this.lander.y + this.lander.height >= surfaceY) {
-                    // Check if in any landing zone
-                    const inLandingZone = this.landingZones.some(zone => 
+                    // Find which landing zone we're in
+                    const currentZone = this.landingZones.find(zone => 
                         Math.abs(this.lander.x + this.lander.width/2 - zone.x) < zone.width/2
                     );
                     
-                    if (this.lander.velocityY < 2 && inLandingZone) {
-                        console.log("Successful landing! ISRU deployment ready.");
+                    const isSoftLanding = this.lander.velocityY < 1.5;
+                    const isStableLanding = Math.abs(this.lander.velocityX) < 0.8;
+                    const hasEnoughFuel = this.lander.fuel > 10;
+                    
+                    if (currentZone && currentZone.type === 'isru' && isSoftLanding && isStableLanding && hasEnoughFuel) {
+                        console.log("Perfect ISRU landing! 🚀 Equipment deployed successfully.");
+                        this.deployISRU();
+                        this.lander.isLanded = true;
+                    } else if (currentZone && isSoftLanding) {
+                        console.log(`Good landing in ${currentZone.label}. Mission success.`);
                         this.lander.isLanded = true;
                     } else if (this.lander.velocityY < 2) {
-                        console.log("Landed outside designated zone.");
+                        console.log("Rough landing, but crew survives.");
                         this.lander.isLanded = true;
                     } else {
-                        console.log("Crash! Mission failed.");
+                        console.log("Crash! Mission failed. ❌");
                         this.lander.isLanded = true;
                     }
                     break;
                 }
             }
         }
+    }
+    
+    findLandingZone() {
+        return this.landingZones.find(zone => zone.type === 'isru');
+    }
+    
+    deployISRU() {
+        console.log("🚀 ISRU equipment operational! Beginning resource extraction...");
     }
     
     drawLandingZones() {
