@@ -16,11 +16,25 @@ class MarsLander {
             isLanded: false
         };
         
+        // Advanced input handling
+        this.keys = {};
+        this.setupInput();
+        
         // Mars surface and landing zones
         this.surface = this.generateSurface();
         this.landingZones = this.generateLandingZones();
         
         this.gameLoop();
+    }
+    
+    setupInput() {
+        document.addEventListener('keydown', (e) => {
+            this.keys[e.code] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+        });
     }
     
     generateSurface() {
@@ -62,10 +76,12 @@ class MarsLander {
     }
     
     update() {
+        if (this.lander.isLanded) return; // Don't update if already landed
+        
         // Mars gravity (lighter than original)
         this.lander.velocityY += 0.08;
         
-        // Handle input (will be expanded)
+        // Handle input
         this.handleInput();
         
         // Update position
@@ -75,16 +91,78 @@ class MarsLander {
         // Basic boundary check
         if (this.lander.x < 0) this.lander.x = 0;
         if (this.lander.x > 784) this.lander.x = 784;
+        
+        // Check for collision
+        this.checkCollision();
     }
     
     handleInput() {
-        // Placeholder for input handling
-        // Will be implemented in different ways on different branches
+        // Advanced RCS thruster controls
+        if (this.keys['ArrowUp'] && this.lander.fuel > 0) {
+            this.lander.velocityY -= this.lander.thrustPower;
+            this.lander.fuel -= 0.6;
+        }
+        
+        if (this.keys['ArrowLeft'] && this.lander.fuel > 0) {
+            this.lander.velocityX -= this.lander.thrustPower * 0.4;
+            this.lander.fuel -= 0.3;
+        }
+        
+        if (this.keys['ArrowRight'] && this.lander.fuel > 0) {
+            this.lander.velocityX += this.lander.thrustPower * 0.4;
+            this.lander.fuel -= 0.3;
+        }
+        
+        // Add drag for realistic flight dynamics
+        this.lander.velocityX *= 0.98;
     }
     
     checkCollision() {
-        // This is where the conflict will occur!
-        // Different implementations on main vs feature branch
+        // Advanced landing system with precise surface collision
+        for (let i = 0; i < this.surface.length - 1; i++) {
+            const point1 = this.surface[i];
+            const point2 = this.surface[i + 1];
+            
+            if (this.lander.x + this.lander.width > point1.x && 
+                this.lander.x < point2.x) {
+                
+                // Precise surface height calculation
+                const t = (this.lander.x + this.lander.width/2 - point1.x) / (point2.x - point1.x);
+                const surfaceY = point1.y + t * (point2.y - point1.y);
+                
+                if (this.lander.y + this.lander.height >= surfaceY) {
+                    // Find which landing zone we're in
+                    const currentZone = this.landingZones.find(zone => 
+                        Math.abs(this.lander.x + this.lander.width/2 - zone.x) < zone.width/2
+                    );
+                    
+                    const isSoftLanding = this.lander.velocityY < 1.5;
+                    const isStableLanding = Math.abs(this.lander.velocityX) < 0.8;
+                    const hasEnoughFuel = this.lander.fuel > 10;
+                    
+                    if (currentZone && currentZone.type === 'isru' && isSoftLanding && isStableLanding && hasEnoughFuel) {
+                        console.log("Perfect ISRU landing! Equipment deployed successfully.");
+                        this.deployISRU();
+                        this.lander.isLanded = true;
+                    } else if (currentZone && isSoftLanding) {
+                        console.log(`Landed in ${currentZone.label}. Basic mission success.`);
+                        this.lander.isLanded = true;
+                    } else {
+                        console.log("Landing failed. ISRU mission compromised.");
+                        this.lander.isLanded = true;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    findLandingZone() {
+        return this.landingZones.find(zone => zone.type === 'isru');
+    }
+    
+    deployISRU() {
+        console.log("🚀 ISRU equipment operational! Beginning resource extraction...");
     }
     
     drawLandingZones() {
